@@ -46,18 +46,19 @@ def create_database():
 
 
 def add_data_to_ships_table(n):
+    conn, cursor = create_conn(database_path)
     for i in range(n):
         ship = "ship-" + str(i+1)
         weapon = "weapon-" + get_random_number_from_1_to_n(20)
         hull = "hull-" + get_random_number_from_1_to_n(5)
         engine = "engine-" + get_random_number_from_1_to_n(6)
         new_ship = (ship, weapon, hull, engine)
-        conn, cursor = create_conn(database_path)
         cursor.execute("INSERT INTO Ships VALUES(?, ?, ?, ?);", new_ship)
         conn.commit()
 
 
 def add_data_to_weapons_table(n):
+    conn, cursor = create_conn(database_path)
     for i in range(n):
         weapon = "weapon-" + str(i+1)
         reload_speed = get_random_number_from_1_to_n(20)
@@ -66,30 +67,29 @@ def add_data_to_weapons_table(n):
         power_volley = get_random_number_from_1_to_n(20)
         count = get_random_number_from_1_to_n(20)
         new_weapon = (weapon, reload_speed, rotation_speed, diameter, power_volley, count)
-        conn, cursor = create_conn(database_path)
         cursor.execute("INSERT INTO Weapons VALUES(?, ?, ?, ?, ?, ?);", new_weapon)
         conn.commit()
 
 
 def add_data_to_hulls_table(n):
+    conn, cursor = create_conn(database_path)
     for i in range(n):
         hull = "hull-" + str(i+1)
         armor = get_random_number_from_1_to_n(20)
         type = get_random_number_from_1_to_n(20)
         capacity = get_random_number_from_1_to_n(20)
         new_hull = (hull, armor, type, capacity)
-        conn, cursor = create_conn(database_path)
         cursor.execute("INSERT INTO Hulls VALUES(?, ?, ?, ?);", new_hull)
         conn.commit()
 
 
 def add_data_to_engines_table(n):
+    conn, cursor = create_conn(database_path)
     for i in range(n):
         engine = "engine-" + str(i+1)
         power = random.randint(1, 20)
         type = random.randint(1, 20)
         new_engine = (engine, power, type)
-        conn, cursor = create_conn(database_path)
         cursor.execute("INSERT INTO Engines VALUES(?, ?, ?);", new_engine)
         conn.commit()
 

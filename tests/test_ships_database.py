@@ -23,11 +23,6 @@ def check_and_copy_database():
     os.remove(backup_database_path)
 
 
-@pytest.fixture(scope='session')
-def delete_backup_database():
-    os.remove(backup_database_path)
-
-
 def get_column(database, column_name, i):
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
@@ -63,27 +58,6 @@ def get_tables_size(table_name):
     return origin_size
 
 
-@check_func
-def asserts_components(origin_data, backup_data):
-    for j in range(len(origin_data) - 2):
-        j = j + 2
-        try:
-            assert origin_data.get(j) == backup_data.get(j), "Assert"
-        except AssertionError:
-            raise(AssertionError(str(backup_data.get(0)) + ", " + str(backup_data.get(1)) +
-                                 ": \n Expected " + str(origin_data.get(j)) +
-                                 ", was " + str(backup_data.get(j)) + "\n "))
-
-
-@check_func
-def asserts_ships(origin_data, backup_data, i):
-    try:
-        assert origin_data == backup_data, "Assert"
-    except AssertionError:
-        raise(AssertionError("Ship-" + str(i + 1) + ", " + backup_data +
-                             ":\n Expected " + origin_data + ", was " + backup_data + "\n"))
-
-
 def get_component(database, table_name, i):
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
@@ -92,11 +66,12 @@ def get_component(database, table_name, i):
     cursor.execute(query)
     result = cursor.fetchone()
     results = {}
-    field_names = [i[0] for i in cursor.description]
+    columns_names = [i[0] for i in cursor.description]
     for j in range(len(cursor.description)):
-        results.update({j: field_names[j] + " " + str(result[j])})
-    cursor.close()
-    conn.close()
+        if table_name.lower()[:-1] in str(result[j]) or "ship" in str(result[j]):
+            results.update({j: str(result[j])})
+        else:
+            results.update({j: columns_names[j] + " " + str(result[j])})
 
     return results
 
@@ -129,37 +104,35 @@ def change_ships_in_backup_database(table_name):
         conn.commit()
 
 
-def test_ship_weapon(check_and_copy_database):
+@check_func
+def asserts_components(origin_data, backup_data):
+    for j in range(len(origin_data) - 2):
+        j = j + 2
+        try:
+            assert origin_data.get(j) == backup_data.get(j), "Assert"
+        except AssertionError:
+            raise(AssertionError(str(backup_data.get(0)) + ", " + str(backup_data.get(1)) +
+                                 ": \n Expected " + str(origin_data.get(j)) +
+                                 ", was " + str(backup_data.get(j)) + "\n "))
+
+
+@check_func
+def asserts_ships(origin_data, backup_data, i):
+    try:
+        assert origin_data == backup_data, "Assert"
+    except AssertionError:
+        raise(AssertionError("Ship-" + str(i + 1) + ", " + backup_data +
+                             ":\n Expected " + origin_data + ", was " + backup_data + "\n"))
+
+
+@pytest.mark.parametrize("table_name,column_name", [("Weapons", "weapon"), ("Hulls", "hull"), ("Engines", "engine")])
+def test_ship_data(check_and_copy_database, table_name, column_name):
     size = get_tables_size("Ships")
     for i in range(size):
-        origin_weapon = get_column(original_database_path, "weapon", i)
-        backup_weapon = get_column(backup_database_path, "weapon", i)
+        origin_weapon = get_column(original_database_path, column_name, i)
+        backup_weapon = get_column(backup_database_path, column_name, i)
         asserts_ships(origin_weapon, backup_weapon, i)
 
-        origin_weapons = get_component(original_database_path, "Weapons", i)
-        backup_weapons = get_component(backup_database_path, "Weapons", i)
+        origin_weapons = get_component(original_database_path, table_name, i)
+        backup_weapons = get_component(backup_database_path, table_name, i)
         asserts_components(origin_weapons, backup_weapons)
-
-
-def test_ship_hull(check_and_copy_database):
-    size = get_tables_size("Ships")
-    for i in range(size):
-        origin_hull = get_column(original_database_path, "hull", i)
-        backup_hull = get_column(backup_database_path, "hull", i)
-        asserts_ships(origin_hull, backup_hull, i)
-
-        origin_hulls = get_component(original_database_path, "Hulls", i)
-        backup_hulls = get_component(backup_database_path, "Hulls", i)
-        asserts_components(origin_hulls, backup_hulls)
-
-
-def test_ship_engine(check_and_copy_database):
-    size = get_tables_size("Ships")
-    for i in range(size):
-        origin_engine = get_column(original_database_path, "engine", i)
-        backup_engine = get_column(backup_database_path, "engine", i)
-        asserts_ships(origin_engine, backup_engine, i)
-
-        origin_engine = get_component(original_database_path, "Engines", i)
-        backup_engine = get_component(backup_database_path, "Engines", i)
-        asserts_components(origin_engine, backup_engine)
